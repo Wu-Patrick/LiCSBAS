@@ -104,7 +104,8 @@ def main(argv=None):
     get_gacos = False
     n_para = 4
 
-    q = multi.get_context('fork')
+    # q = multi.get_context('fork')
+    q = multi.get_context('spawn')
 
 
     #%% Read options

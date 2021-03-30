@@ -2,6 +2,9 @@
 """
 v1.7.4 202011119 Yu Morishita, GSI
 
+@modified by: wuzhipeng (763008300@qq.com)
+@website:     https://wuzhipeng.cn/
+
 This script converts GeoTIFF files of unw and cc to float32 and uint8 format, respectively, for further time series analysis, and also downsamples (multilooks) data if specified. Existing files are not re-created to save time, i.e., only the newly available data will be processed.
 
 ====================
@@ -94,6 +97,9 @@ import LiCSBAS_io_lib as io_lib
 import LiCSBAS_tools_lib as tools_lib
 import LiCSBAS_plot_lib as plot_lib
 
+unwFolder = 'unwrapSnaphuWgtbenetInitial'
+cohFolder = 'coherence'
+
 class Usage(Exception):
     """Usage context manager"""
     def __init__(self, msg):
@@ -169,7 +175,8 @@ def main(argv=None):
     #%% Directory and file setting
     geocdir = os.path.abspath(geocdir)
     if not outdir:
-        outdir = os.path.join(os.path.dirname(geocdir), 'GEOCml{}'.format(nlook))
+        # outdir = os.path.join(os.path.dirname(geocdir), 'GEOCml{}'.format(nlook))
+        outdir = os.path.join(os.getcwd(), 'GEOCml{}'.format(nlook))
     if not os.path.exists(outdir): os.mkdir(outdir)
 
     mlipar = os.path.join(outdir, 'slc.mli.par')
@@ -263,15 +270,16 @@ def main(argv=None):
 
     #%% tif -> float (with multilook/downsampling)
     print('\nCreate unw and cc', flush=True)
-    ifgdates = tools_lib.get_ifgdates(geocdir)
+    # ifgdates = tools_lib.get_ifgdatesWZP(geocdir,split='-')
+    ifgdates = [k.replace('.wzp','') for k in sorted(os.listdir(os.path.join(geocdir,unwFolder)))]
     n_ifg = len(ifgdates)
     
     ### First check if float already exist
     ifgdates2 = []
     for i, ifgd in enumerate(ifgdates): 
-        ifgdir1 = os.path.join(outdir, ifgd)
-        unwfile = os.path.join(ifgdir1, ifgd+'.unw')
-        ccfile = os.path.join(ifgdir1, ifgd+'.cc')
+        ifgdir1 = os.path.join(outdir, ifgd.replace('-','_'))
+        unwfile = os.path.join(ifgdir1, ifgd.replace('-','_')+'.unw')
+        ccfile = os.path.join(ifgdir1, ifgd.replace('-','_')+'.cc')
         if not (os.path.exists(unwfile) and os.path.exists(ccfile)):
             ifgdates2.append(ifgd)
 
@@ -302,11 +310,34 @@ def main(argv=None):
         ## If all float already exist, this will not be done, but no problem because
         ## par files should alerady exist!
         if ifgd_ok:
-            unw_tiffile = os.path.join(geocdir, ifgd_ok, ifgd_ok+'.geo.unw.tif')
-            geotiff = gdal.Open(unw_tiffile)
-            width = geotiff.RasterXSize
-            length = geotiff.RasterYSize
-            lon_w_p, dlon, _, lat_n_p, _, dlat = geotiff.GetGeoTransform()
+            try:
+                with open(os.path.join(geocdir, 'info.txt'), 'r') as f:
+                    info = f.read()
+                length = eval(info.split('rows:')[1].strip().split()[0])
+                width = eval(info.split('cols:')[1].strip().split()[0])
+            except:
+                print('  "info.txt" cannot find in {}. Please check'.format(geocdir), flush=True)
+                return 1
+
+
+            # lon_w_p, dlon, _, lat_n_p, _, dlat = geotiff.GetGeoTransform()
+
+            kmlFile = os.path.join(geocdir, ifgd_ok, 'dint_geocode.kml')
+            try:
+                with open(kmlFile, 'r') as f:
+                    info = f.read()
+            except:
+                print('  geo info cannot find in {}. Please check'.format(geocdir), flush=True)
+                return 1
+
+            lon_e_p = eval(info.split('<east>', 1)[1].split('</east>', 1)[0])
+            lon_w_p = eval(info.split('<west>', 1)[1].split('</west>', 1)[0])
+            lat_n_p = eval(info.split('<north>', 1)[1].split('</north>', 1)[0])
+            lat_s_p = eval(info.split('<south>', 1)[1].split('</south>', 1)[0])
+            dlon = (lon_e_p - lon_w_p) / width
+            dlat = (lat_s_p - lat_n_p) / length
+
+
             ## lat lon are in pixel registration. dlat is negative
             lon_w_g = lon_w_p + dlon/2
             lat_n_g = lat_n_p + dlat/2
@@ -397,38 +428,51 @@ def convert_wrapper(i):
     if np.mod(i,10) == 0:
         print("  {0:3}/{1:3}th IFG...".format(i, len(ifgdates2)), flush=True)
 
-    unw_tiffile = os.path.join(geocdir, ifgd, ifgd+'.geo.unw.tif')
-    cc_tiffile = os.path.join(geocdir, ifgd, ifgd+'.geo.cc.tif')
+    # unw_tiffile = os.path.join(geocdir, ifgd, ifgd+'.geo.unw.tif')
+    # cc_tiffile = os.path.join(geocdir, ifgd, ifgd+'.geo.cc.tif')
+    unw_tiffile = os.path.join(geocdir, unwFolder, ifgd+'.wzp')
+    cc_tiffile = os.path.join(geocdir, cohFolder, ifgd+'.wzp')
 
     ### Check if inputs exist
     if not os.path.exists(unw_tiffile):
-        print ('  No {} found. Skip'.format(ifgd+'.geo.unw.tif'), flush=True)
+        print ('  No {} found. Skip'.format(ifgd+'.wzp'), flush=True)
         return 1
     elif not os.path.exists(cc_tiffile):
-        print ('  No {} found. Skip'.format(ifgd+'.geo.cc.tif'), flush=True)
+        print ('  No {} found. Skip'.format(ifgd+'.wzp'), flush=True)
         return 1
 
     ### Output dir and files
-    ifgdir1 = os.path.join(outdir, ifgd)
+    ifgdir1 = os.path.join(outdir, ifgd.replace('-','_'))
     if not os.path.exists(ifgdir1): os.mkdir(ifgdir1)
-    unwfile = os.path.join(ifgdir1, ifgd+'.unw')
-    ccfile = os.path.join(ifgdir1, ifgd+'.cc')
+    unwfile = os.path.join(ifgdir1, ifgd.replace('-','_')+'.unw')
+    ccfile = os.path.join(ifgdir1, ifgd.replace('-','_')+'.cc')
 
     ### Read data from geotiff
     try:
-        unw = gdal.Open(unw_tiffile).ReadAsArray()
+        with open(os.path.join(geocdir, 'info.txt'), 'r') as f:
+            info = f.read()
+        rows = eval(info.split('rows:')[1].strip().split()[0])
+        cols = eval(info.split('cols:')[1].strip().split()[0])
+    except:
+        print('  "info.txt" cannot find in {}. Please check'.format(geocdir), flush=True)
+        return 1
+
+    try:
+        # unw = gdal.Open(unw_tiffile).ReadAsArray()
+        unw = np.fromfile(unw_tiffile, dtype=np.float32).reshape(rows, cols)
         unw[unw==0] = np.nan
     except: ## if broken
-        print ('  {} cannot open. Skip'.format(ifgd+'.geo.unw.tif'), flush=True)
+        print ('  {} cannot open. Skip'.format(unwFolder+'/'+ifgd+'.wzp'), flush=True)
         shutil.rmtree(ifgdir1)
         return 1
 
     try:
-        cc = gdal.Open(cc_tiffile).ReadAsArray()
+        # cc = gdal.Open(cc_tiffile).ReadAsArray()
+        cc = np.fromfile(cc_tiffile, dtype=np.float32).reshape(rows, cols)
         if cc.dtype == np.float32:
             cc = cc*255 ## 0-1 -> 0-255 to output in uint8
     except: ## if broken
-        print ('  {} cannot open. Skip'.format(ifgd+'.geo.cc.tif'), flush=True)
+        print ('  {} cannot open. Skip'.format(cohFolder+'/'+ifgd+'.wzp'), flush=True)
         shutil.rmtree(ifgdir1)
         return 1
 
@@ -445,8 +489,8 @@ def convert_wrapper(i):
     cc.tofile(ccfile)
 
     ### Make png
-    unwpngfile = os.path.join(ifgdir1, ifgd+'.unw.png')
-    plot_lib.make_im_png(np.angle(np.exp(1j*unw/cycle)*cycle), unwpngfile, cmap_wrap, ifgd+'.unw', vmin=-np.pi, vmax=np.pi, cbar=False)
+    unwpngfile = os.path.join(ifgdir1, ifgd.replace('-','_')+'.unw.png')
+    plot_lib.make_im_png(np.angle(np.exp(1j*unw/cycle)*cycle), unwpngfile, cmap_wrap, ifgd.replace('-','_')+'.unw', vmin=-np.pi, vmax=np.pi, cbar=False)
     
     return 0
 

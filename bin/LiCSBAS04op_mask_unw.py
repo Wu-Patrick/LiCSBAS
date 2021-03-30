@@ -107,7 +107,8 @@ def main(argv=None):
 
     cmap_noise = 'viridis'
     cmap_wrap = SCM.romaO
-    q = multi.get_context('fork')
+    # q = multi.get_context('fork')
+    q = multi.get_context('spawn')
 
 
     #%% Read options
@@ -264,7 +265,8 @@ def main(argv=None):
             
         print('  {} parallel processing...'.format(n_para), flush=True)
         p = q.Pool(n_para)
-        p.map(mask_wrapper, range(n_ifg2))
+        # p.map(mask_wrapper, range(n_ifg2))
+        p.map(mask_wrapper, [(i,ifgdates2, in_dir, out_dir, length, width, bool_mask, cycle, cmap_wrap) for i in range(n_ifg2)])
         p.close()
 
     print("", flush=True)
@@ -294,6 +296,7 @@ def main(argv=None):
 
 #%%
 def mask_wrapper(ifgix):
+    ifgix,ifgdates2, in_dir, out_dir, length, width, bool_mask, cycle, cmap_wrap=ifgix
     ifgd = ifgdates2[ifgix]
     if np.mod(ifgix,100) == 0:
         print("  {0:3}/{1:3}th unw...".format(ifgix, len(ifgdates2)), flush=True)

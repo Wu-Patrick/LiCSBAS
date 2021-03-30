@@ -6,10 +6,8 @@ Overview
 Python3 library of input/output functions for LiCSBAS.
 
 =========
-Change log
+Changelog
 =========
-v1.4 20210224 Yu Morioshita, GSI
- - Add read_geotiff
 v1.3 20210209 Yu Morioshita, GSI
  - Add make_geotiff
 v1.2.1 20201211 Yu Morioshita, GSI
@@ -169,26 +167,6 @@ def read_bperp_file(bperp_file, imdates):
 
 
 #%%
-def read_geotiff(file, file_ref=None):
-    geotiff = gdal.Open(file)
-
-    if file_ref is not None: # Compare size and area
-        size = (geotiff.RasterXSize, geotiff.RasterYSize)
-        area = geotiff.GetGeoTransform()
-
-        geotiff_ref = gdal.Open(file_ref)
-        size_ref = (geotiff_ref.RasterXSize, geotiff_ref.RasterYSize)
-        area_ref = geotiff_ref.GetGeoTransform()
-
-        if not (size == size_ref and area == area_ref):
-            raise Exception('ERROR: File size or area are not identical between {} and {}'.format(file, file_ref))
-
-    data = geotiff.ReadAsArray()
-
-    return data
-
-
-#%%
 def read_img(file, length, width, dtype=np.float32, endian='little'):
     """
     Read image data into numpy array.
@@ -233,6 +211,9 @@ def get_param_par(mlipar, field):
      - azimuth_pixel_spacing (m)
      - radar_frequency  (Hz)
     """
-    value = subp.check_output(['grep', field,mlipar]).decode().split()[1].strip()
+    # value = subp.check_output(['grep', field,mlipar]).decode().split()[1].strip()
+    with open(mlipar,'r') as f:
+        content = f.read()
+    value = content.split(field+':')[1].split()[0].strip()
     return value
 

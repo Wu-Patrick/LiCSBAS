@@ -7,5 +7,4 @@ matplotlib
 numpy
 psutil
 requests
-shapely
 statsmodels

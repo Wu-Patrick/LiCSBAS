@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
 """
-v1.5.2 20210311 Yu Morishita, GSI
+v1.4.8 20210127 Yu Morishita, GSI
 
-This script inverts the SB network of unw to obtain the time series and
-velocity using NSBAS (López-Quiroz et al., 2009; Doin et al., 2011) approach.
-A stable reference point is determined after the inversion. RMS of the time
-series wrt median among all points is calculated for each point.
-Then the point with minimum RMS and minimum n_gap is selected as new stable
-reference point.
+This script inverts the SB network of unw to obtain the time series and velocity
+using NSBAS (López-Quiroz et al., 2009; Doin et al., 2011) approach.
+A stable reference point is determined after the inversion. RMS of the time series
+wrt median among all points is calculated for each point. Then the point with
+minimum RMS and minimum n_gap is selected as new stable reference point.
 
 ===============
 Input & output files
@@ -19,19 +18,11 @@ Inputs in GEOCml*/ :
  - EQA.dem_par
  - slc.mli.par
  - baselines (may be dummy)
-[- [ENU].geo]
 
-Inputs in TS_GEOCml*/ :
- - info/
-   - 11bad_ifg.txt
-   - 12bad_ifg.txt
-   - 12ref.txt
-[-results/]
-[  - coh_avg]
-[  - hgt]
-[  - n_loop_err]
-[  - n_unw]
-[  - slc.mli]
+Inputs in TS_GEOCml*/info/ :
+ - 11bad_ifg.txt
+ - 12bad_ifg.txt
+ - 12ref.txt
 
 Outputs in TS_GEOCml*/ :
  - cum.h5             : Cumulative displacement (time-seires) in mm
@@ -56,7 +47,7 @@ Outputs in TS_GEOCml*/ :
 =====
 Usage
 =====
-LiCSBAS13_sb_inv.py -d ifgdir [-t tsadir] [--inv_alg LS|WLS] [--mem_size float] [--gamma float] [--n_para int] [--n_unw_r_thre float] [--keep_incfile] [--gpu]
+LiCSBAS13_sb_inv.py -d ifgdir [-t tsadir] [--inv_alg LS|WLS] [--mem_size float] [--gamma float] [--n_para int] [--n_unw_r_thre float] [--keep_incfile]
 
  -d  Path to the GEOCml* dir containing stack of unw data
  -t  Path to the output TS_GEOCml* dir.
@@ -64,7 +55,7 @@ LiCSBAS13_sb_inv.py -d ifgdir [-t tsadir] [--inv_alg LS|WLS] [--mem_size float] 
    LS :       NSBAS Least Square with no weight
    WLS:       NSBAS Weighted Least Square (not well tested)
               Weight (variance) is calculated by (1-coh**2)/(2*coh**2)
- --mem_size   Max memory size for each patch in MB. (Default: 8000)
+ --mem_size   Max memory size for each patch in MB. (Default: 4000)
  --gamma      Gamma value for NSBAS inversion (Default: 0.0001)
  --n_para     Number of parallel processing (Default: # of usable CPU)
  --n_unw_r_thre
@@ -74,19 +65,10 @@ LiCSBAS13_sb_inv.py -d ifgdir [-t tsadir] [--inv_alg LS|WLS] [--mem_size float] 
      (Default: 1 and 0.5 for C- and L-band, respectively)
  --keep_incfile
      Not remove inc and resid files (Default: remove them)
- --gpu        Use GPU (Need cupy module)
 
 """
 #%% Change log
 '''
-v1.5.2 20210311 Yu Morishita, GSI
- - Include noise indices and LOS unit vector in cum.h5 file
-v1.5.1 20210309 Yu Morishita, GSI
- - Change default --mem_size to 8000
- - Speed up by reading cum data on memory
-v1.5 20210305 Yu Morishita, GSI
- - Add GPU option
- - Speed up by activating n_para_inv and OMP_NUM_THREADS=1
 v1.4.8 20210127 Yu Morishita, GSI
  - Automatically reduce mem_size if available RAM is small
 v1.4.7 20201124 Yu Morishita, GSI
@@ -154,7 +136,7 @@ def main(argv=None):
         argv = sys.argv
 
     start = time.time()
-    ver="1.5.2"; date=20210311; author="Y. Morishita"
+    ver="1.4.8"; date=20210127; author="Y. Morishita"
     print("\n{} ver{} {} {}".format(os.path.basename(argv[0]), ver, date, author), flush=True)
     print("{} {}".format(os.path.basename(argv[0]), ' '.join(argv[1:])), flush=True)
 
@@ -168,18 +150,14 @@ def main(argv=None):
     ifgdir = []
     tsadir = []
     inv_alg = 'LS'
-    gpu = False
 
     try:
         n_para = len(os.sched_getaffinity(0))
     except:
         n_para = multi.cpu_count()
+    n_para_inv = 1
 
-    os.environ["OMP_NUM_THREADS"] = "1"
-    # Because np.linalg.lstsq use full CPU but not much faster than 1CPU.
-    # Instead parallelize by multiprocessing
-
-    memory_size = 8000
+    memory_size = 4000
     gamma = 0.0001
     n_unw_r_thre = []
     keep_incfile = False
@@ -188,17 +166,15 @@ def main(argv=None):
     cmap_noise = 'viridis'
     cmap_noise_r = 'viridis_r'
     cmap_wrap = SCM.romaO
-    q = multi.get_context('fork')
+    # q = multi.get_context('fork')
+    q = multi.get_context('spawn')
     compress = 'gzip'
 
 
     #%% Read options
     try:
         try:
-            opts, args = getopt.getopt(argv[1:], "hd:t:",
-                                       ["help",  "mem_size=", "gamma=",
-                                        "n_unw_r_thre=", "keep_incfile",
-                                        "inv_alg=", "n_para=", "gpu"])
+            opts, args = getopt.getopt(argv[1:], "hd:t:", ["help",  "mem_size=", "gamma=", "n_unw_r_thre=", "keep_incfile", "inv_alg=", "n_para="])
         except getopt.error as msg:
             raise Usage(msg)
         for o, a in opts:
@@ -221,8 +197,6 @@ def main(argv=None):
                 inv_alg = a
             elif o == '--n_para':
                 n_para = int(a)
-            elif o == '--gpu':
-                gpu = True
 
         if not ifgdir:
             raise Usage('No data directory given, -d is not optional!')
@@ -230,9 +204,6 @@ def main(argv=None):
             raise Usage('No {} dir exists!'.format(ifgdir))
         elif not os.path.exists(os.path.join(ifgdir, 'slc.mli.par')):
             raise Usage('No slc.mli.par file exists in {}!'.format(ifgdir))
-        if gpu:
-            print("\nGPU option is activated. Need cupy module.\n")
-            import cupy as cp
 
     except Usage as err:
         print("\nERROR:", file=sys.stderr, end='')
@@ -271,12 +242,6 @@ def main(argv=None):
 
     cumh5file = os.path.join(tsadir,'cum.h5')
 
-    if n_para > 32:
-        # Emprically >32 does not make much faster despite using large resource
-        n_para_inv = 32
-    else:
-        n_para_inv = n_para
-
 
     #%% Check files
     try:
@@ -297,6 +262,14 @@ def main(argv=None):
     with open(reffile, "r") as f:
         refarea = f.read().split()[0]  #str, x1/x2/y1/y2
     refx1, refx2, refy1, refy2 = [int(s) for s in re.split('[:/]', refarea)]
+
+
+    #%% Check RAM
+    mem_avail = (psutil.virtual_memory().available)/2**20 #MB
+    if memory_size > mem_avail/2:
+        print('\nNot enough memory available compared to mem_size ({} MB).'.format(memory_size))
+        print('Reduce mem_size automatically to {} MB.'.format(int(mem_avail/2)))
+        memory_size = int(mem_avail/2)
 
 
     #%% Read data information
@@ -402,30 +375,13 @@ def main(argv=None):
 
 
     #%% Get patch row number
-    ### Check RAM
-    mem_avail = (psutil.virtual_memory().available)/2**20 #MB
-    if memory_size > mem_avail/2:
-        print('\nNot enough memory available compared to mem_size ({} MB).'.format(memory_size))
-        print('Reduce mem_size automatically to {} MB.'.format(int(mem_avail/2)))
-        memory_size = int(mem_avail/2)
-
-    ### Determine if read cum on memory (fast) or hdf5 (slow)
-    cum_size = int(n_im*length*width*4/2**20) #MB
-    if memory_size > cum_size*2:
-        print('Read cum data on memory (fast but need memory).')
-        save_mem = False # read on memory
-        memory_size_patch = memory_size - cum_size
-    else:
-        print('Read cum data in HDF5 (save memory but slow).')
-        save_mem = True # read on hdf5
-        memory_size_patch = memory_size
-
     if inv_alg == 'WLS':
         n_store_data = n_ifg*3+n_im*2+n_im*0.3 #
     else:
         n_store_data = n_ifg*2+n_im*2+n_im*0.3 #not sure
 
-    n_patch, patchrow = tools_lib.get_patchrow(width, length, n_store_data, memory_size_patch)
+
+    n_patch, patchrow = tools_lib.get_patchrow(width, length, n_store_data, memory_size)
 
 
     #%% Display and output settings & parameters
@@ -493,19 +449,10 @@ def main(argv=None):
     cumh5.create_dataset('imdates', data=[np.int32(imd) for imd in imdates])
     if not np.all(np.abs(np.array(bperp))<=1):# if not dummy
         cumh5.create_dataset('bperp', data=bperp)
-    gap = cumh5.require_dataset('gap', (n_im-1, length, width),
-                                dtype=np.int8, compression=compress)
-    if save_mem:
-        cum = cumh5.require_dataset('cum', (n_im, length, width),
-                                    dtype=np.float32, compression=compress)
-        vel = cumh5.require_dataset('vel', (length, width),
-                                    dtype=np.float32, compression=compress)
-        vconst = cumh5.require_dataset('vintercept', (length, width),
-                                       dtype=np.float32, compression=compress)
-    else:
-        cum = np.zeros((n_im, length, width), dtype=np.float32)
-        vel = np.zeros((length, width), dtype=np.float32)
-        vconst = np.zeros((length, width), dtype=np.float32)
+    cum = cumh5.require_dataset('cum', (n_im, length, width), dtype=np.float32, compression=compress)
+    vel = cumh5.require_dataset('vel', (length, width), dtype=np.float32, compression=compress)
+    vconst = cumh5.require_dataset('vintercept', (length, width), dtype=np.float32, compression=compress)
+    gap = cumh5.require_dataset('gap', (n_im-1, length, width), dtype=np.int8, compression=compress)
 
     if width == width_geo and length == length_geo: ## if geocoded
         cumh5.create_dataset('corner_lat', data=lat1)
@@ -585,74 +532,28 @@ def main(argv=None):
             gap_patch = np.zeros((n_im-1, n_pt_all), dtype=np.int8)
             ns_ifg_noloop_patch = np.zeros((n_pt_all), dtype=np.float32)*np.nan
             maxTlen_patch = np.zeros((n_pt_all), dtype=np.float32)*np.nan
-            print('\n  Identifing gaps, and counting n_gap and n_ifg_noloop,')
 
-            if gpu:
-                print('  using GPU...', flush=True)
-                n_loop, _ = Aloop.shape
-                unwpatch_cp = cp.asarray(unwpatch)
-                G_cp = cp.asarray(G)
-                Aloop_cp = cp.asarray(Aloop)
-
-                ns_unw_unnan4inc = cp.array(
-                    [(G_cp[:, i]*(~cp.isnan(unwpatch_cp))).sum(
-                        axis=1, dtype=cp.int16) for i in range(n_im-1)])
-                # n_ifg*(n_pt,n_ifg) -> (n_im-1,n_pt)
-                ns_gap_patch[ix_unnan_pt] = cp.asnumpy(
-                    (ns_unw_unnan4inc==0).sum(axis=0)) #n_pt
-                gap_patch[:, ix_unnan_pt] = cp.asnumpy(ns_unw_unnan4inc==0)
-
-                del ns_unw_unnan4inc
-                del G_cp
-
-                ### n_ifg_noloop
-                # n_ifg*(n_pt,n_ifg)->(n_loop,n_pt)
-                # Number of ifgs for each loop at eath point.
-                # 3 means complete loop, 1 or 2 means broken loop.
-                ns_ifg4loop = cp.array([
-                        (cp.abs(Aloop_cp[i, :])*(~cp.isnan(unwpatch_cp))).sum(axis=1)
-                        for i in range(n_loop)])
-                bool_loop = (ns_ifg4loop==3)
-                #(n_loop,n_pt) identify complete loop only
-
-                # n_loop*(n_loop,n_pt)*n_pt->(n_ifg,n_pt)
-                # Number of loops for each ifg at eath point.
-                ns_loop4ifg = cp.array([(
-                        (cp.abs(Aloop_cp[:, i])*bool_loop.T).T*
-                        (~cp.isnan(unwpatch_cp[:, i]))
-                        ).sum(axis=0) for i in range(n_ifg)]) #
-
-                ns_ifg_noloop_tmp = (ns_loop4ifg==0).sum(axis=0) #n_pt
-                ns_nan_ifg = cp.isnan(unwpatch_cp).sum(axis=1) #n_pt, nan ifg count
-                ns_ifg_noloop_patch[ix_unnan_pt] = cp.asnumpy(
-                    ns_ifg_noloop_tmp - ns_nan_ifg)
-
-                del bool_loop, ns_ifg4loop, ns_loop4ifg
-                del ns_ifg_noloop_tmp, ns_nan_ifg
-                del unwpatch_cp, Aloop_cp
-
+            ### Determine n_para
+            n_pt_patch_min = 1000
+            if n_pt_patch_min*n_para > n_pt_unnan:
+                ## Too much n_para
+                n_para_gap = int(np.floor(n_pt_unnan/n_pt_patch_min))
+                if n_para_gap == 0: n_para_gap = 1
             else:
-                ### Determine n_para
-                n_pt_patch_min = 1000
-                if n_pt_patch_min*n_para > n_pt_unnan:
-                    ## Too much n_para
-                    n_para_gap = int(np.floor(n_pt_unnan/n_pt_patch_min))
-                    if n_para_gap == 0: n_para_gap = 1
-                else:
-                    n_para_gap = n_para
+                n_para_gap = n_para
 
-                print('  with {} parallel processing...'.format(n_para_gap),
-                      flush=True)
+            print('\n  Identifing gaps, and counting n_gap and n_ifg_noloop,')
+            print('  with {} parallel processing...'.format(n_para_gap), flush=True)
 
-                ### Devide unwpatch by n_para for parallel processing
-                p = q.Pool(n_para_gap)
-                _result = np.array(p.map(count_gaps_wrapper, range(n_para_gap)),
-                                   dtype=object)
-                p.close()
+            ### Devide unwpatch by n_para for parallel processing
+            p = q.Pool(n_para_gap)
+            # _result = np.array(p.map(count_gaps_wrapper, range(n_para_gap)), dtype=object)
+            _result = np.array(p.map(count_gaps_wrapper, [(i,n_para_gap, G, Aloop, unwpatch) for i in range(n_para_gap)]), dtype=object)
+            p.close()
 
-                ns_gap_patch[ix_unnan_pt] = np.hstack(_result[:, 0]) #n_pt
-                gap_patch[:, ix_unnan_pt] = np.hstack(_result[:, 1]) #n_im-1, n_pt
-                ns_ifg_noloop_patch[ix_unnan_pt] = np.hstack(_result[:, 2])
+            ns_gap_patch[ix_unnan_pt] = np.hstack(_result[:, 0]) #n_pt
+            gap_patch[:, ix_unnan_pt] = np.hstack(_result[:, 1]) #n_im-1, n_pt
+            ns_ifg_noloop_patch[ix_unnan_pt] = np.hstack(_result[:, 2])
 
             ### maxTlen
             _maxTlen = np.zeros((n_pt_unnan), dtype=np.float32) #temporaly
@@ -667,11 +568,9 @@ def main(argv=None):
             #%% Time series inversion
             print('\n  Small Baseline inversion by {}...\n'.format(inv_alg), flush=True)
             if inv_alg == 'WLS':
-                inc_tmp, vel_tmp, vconst_tmp = inv_lib.invert_nsbas_wls(
-                    unwpatch, varpatch, G, dt_cum, gamma, n_para_inv)
+                inc_tmp, vel_tmp, vconst_tmp = inv_lib.invert_nsbas_wls(unwpatch, varpatch, G, dt_cum, gamma, n_para_inv)
             else:
-                inc_tmp, vel_tmp, vconst_tmp = inv_lib.invert_nsbas(
-                    unwpatch, G, dt_cum, gamma, n_para_inv, gpu)
+                inc_tmp, vel_tmp, vconst_tmp = inv_lib.invert_nsbas(unwpatch, G, dt_cum, gamma, n_para_inv)
 
             ### Set to valuables
             inc_patch = np.zeros((n_im-1, n_pt_all), dtype=np.float32)*np.nan
@@ -813,33 +712,7 @@ def main(argv=None):
         io_lib.make_point_kml(reflat, reflon, os.path.join(infodir, '13ref.kml'))
 
 
-
     #%% Close h5 file
-    if not save_mem:
-        print('\nWriting to HDF5 file...')
-        cumh5.create_dataset('cum', data=cum, compression=compress)
-        cumh5.create_dataset('vel', data=vel, compression=compress)
-        cumh5.create_dataset('vintercept', data=vconst, compression=compress)
-
-    indices = ['coh_avg', 'hgt', 'n_loop_err', 'n_unw', 'slc.mli',
-               'maxTlen', 'n_gap', 'n_ifg_noloop', 'resid_rms']
-    for index in indices:
-        file = os.path.join(resultsdir, index)
-        if os.path.exists(file):
-            data = io_lib.read_img(file, length, width)
-            cumh5.create_dataset(index, data=data, compression=compress)
-        else:
-            print('  {} not exist in results dir. Skip'.format(index))
-
-    LOSvecs = ['E.geo', 'N.geo', 'U.geo']
-    for LOSvec in LOSvecs:
-        file = os.path.join(ifgdir, LOSvec)
-        if os.path.exists(file):
-            data = io_lib.read_img(file, length, width)
-            cumh5.create_dataset(LOSvec, data=data, compression=compress)
-        else:
-            print('  {} not exist in GEOCml dir. Skip'.format(LOSvec))
-
     cumh5.close()
 
 
@@ -848,7 +721,8 @@ def main(argv=None):
     _n_para = n_im-1 if n_para > n_im-1 else n_para
     print('\nOutput increment png images with {} parallel processing...'.format(_n_para), flush=True)
     p = q.Pool(_n_para)
-    p.map(inc_png_wrapper, range(n_im-1))
+    # p.map(inc_png_wrapper, range(n_im-1))
+    p.map(inc_png_wrapper, [(i,imdates,incdir,ifgdir, length, width,coef_r2m,ifgdates,ref_unw,cycle,cmap_wrap,keep_incfile) for i in range(n_im-1)])
     p.close()
 
     ### Residual for each ifg. png and txt.
@@ -857,7 +731,8 @@ def main(argv=None):
     _n_para = n_ifg if n_para > n_ifg else n_para
     print('\nOutput residual png images with {} parallel processing...'.format(_n_para), flush=True)
     p = q.Pool(_n_para)
-    p.map(resid_png_wrapper, range(n_ifg))
+    # p.map(resid_png_wrapper, range(n_ifg))
+    p.map(resid_png_wrapper, [(i,ifgdates,resdir, length, width,restxtfile,cmap_vel,wavelength,keep_incfile) for i in range(n_ifg)])
     p.close()
 
     ### Velocity and noise indices
@@ -896,6 +771,8 @@ def main(argv=None):
 
 #%%
 def count_gaps_wrapper(i):
+    i, n_para_gap, G, Aloop, unwpatch = i
+
     print("    Running {:2}/{:2}th patch...".format(i+1, n_para_gap), flush=True)
     n_pt_patch = int(np.ceil(unwpatch.shape[0]/n_para_gap))
     n_im = G.shape[1]+1
@@ -946,6 +823,7 @@ def count_gaps_wrapper(i):
 
 #%%
 def inc_png_wrapper(imx):
+    imx,imdates,incdir,ifgdir, length, width,coef_r2m,ifgdates,ref_unw,cycle,cmap_wrap,keep_incfile=imx
     imd = imdates[imx]
     if imd == imdates[-1]:
         return #skip last for increment
@@ -976,6 +854,7 @@ def inc_png_wrapper(imx):
 
 #%%
 def resid_png_wrapper(i):
+    i,ifgdates,resdir, length, width,restxtfile,cmap_vel,wavelength,keep_incfile=i
     ifgd = ifgdates[i]
     infile = os.path.join(resdir, '{}.res'.format(ifgd))
     resid = io_lib.read_img(infile, length, width)

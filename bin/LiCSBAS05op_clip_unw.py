@@ -105,7 +105,8 @@ def main(argv=None):
     except:
         n_para = multi.cpu_count()
 
-    q = multi.get_context('fork')
+    # q = multi.get_context('fork')
+    q = multi.get_context('spawn')
     cmap_wrap = SCM.romaO
 
 

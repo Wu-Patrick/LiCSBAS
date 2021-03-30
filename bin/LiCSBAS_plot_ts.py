@@ -116,6 +116,7 @@ import LiCSBAS_io_lib as io_lib
 import LiCSBAS_tools_lib as tools_lib
 
 os.environ['LANG'] = 'en_US.UTF-8'
+# plt.switch_backend('Qt5Agg')
 
 try:
     from pandas.plotting import register_matplotlib_converters
@@ -357,7 +358,7 @@ if __name__ == "__main__":
         else:
             refx1, refx2, refy1, refy2 = tools_lib.read_range_geo(refarea_geo, width, length, lat1, dlat, lon1, dlon)
     else:
-        refarea = cumh5['refarea'][()]
+        refarea = cumh5['refarea'][()].decode('utf-8')
         refx1, refx2, refy1, refy2 = [int(s) for s in re.split('[:/]', refarea)]
 
 
@@ -890,7 +891,6 @@ if __name__ == "__main__":
         print('\nCreate {} for time seires plot\n'.format(ts_pngfile))
         pts.savefig(ts_pngfile)
         sys.exit(0)
-
 
     #%% Final linking of the canvas to the plots.
     cid = pv.canvas.mpl_connect('button_press_event', printcoords)
