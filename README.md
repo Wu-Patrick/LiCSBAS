@@ -29,7 +29,7 @@ Users can easily derive the time series and velocity of the displacement if suff
 
    If the gdal installation fails, perform the following steps to install it manually.
 
-   a. Download the appropriate GDAL installation file according to your computer system and python version from http://www.lfd.uci.edu/~gohlke/pythonlibs/#gdal , such as GDAL-x.x.x-cpxx-cpxxm-win_amd64.whl
+   a. Download the appropriate GDAL installation file according to your computer system and python version from [http://www.lfd.uci.edu/~gohlke/pythonlibs/#gdal](http://www.lfd.uci.edu/~gohlke/pythonlibs/#gdal), such as GDAL-x.x.x-cpxx-cpxxm-win_amd64.whl
 
    b. Use the command `pip install GDAL-x.x.x-cpxx-cpxxm-win_amd64.whl` to install, note that xx needs to be replaced.
 
@@ -56,7 +56,7 @@ Users can easily derive the time series and velocity of the displacement if suff
    
    如果gdal安装失败，执行以下步骤手动安装：
    
-   a. 根据你的计算机系统和python版本，从http://www.lfd.uci.edu/~gohlke/pythonlibs/#gdal下载合适的GDAL安装文件，如GDAL-x.x.x-cpxx-cpxxm-win_amd64.whl
+   a. 根据你的计算机系统和python版本，从[http://www.lfd.uci.edu/~gohlke/pythonlibs/#gdal](http://www.lfd.uci.edu/~gohlke/pythonlibs/#gdal)下载合适的GDAL安装文件，如GDAL-x.x.x-cpxx-cpxxm-win_amd64.whl
    
    b. 使用`pip install GDAL-x.x.x-cpxx-cpxxm-win_amd64.whl`命令进行安装，注意xx需要被替换。
    
