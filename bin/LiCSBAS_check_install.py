@@ -19,7 +19,7 @@ from importlib import import_module
 import platform
 import shutil
 import sys
-
+import os
 
 #%% Main
 if __name__ == "__main__":
@@ -72,16 +72,14 @@ if __name__ == "__main__":
         else:
             print('  gdal({}) OK'.format(ver))
 
-
     print('\nCheck LiCSBAS commands')
-    rc = shutil.which('LiCSBAS01_get_geotiff.py')
-    if rc is None:
+    rc = os.system('Check_LiCSBAS_commands.py')
+    if rc:
         print('  ERROR: PATH is not set to LiCSBAS commands')
         flag = False
     else:
         print('  OK')
 
- 
     print('\nCheck LiCSBAS library')
     try:
          imported = import_module('LiCSBAS_io_lib')

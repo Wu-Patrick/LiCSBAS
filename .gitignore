@@ -8,6 +8,7 @@ __pycache__/
 
 bin/backup
 GammaMCF/
+.idea
 
 # Distribution / packaging
 .Python

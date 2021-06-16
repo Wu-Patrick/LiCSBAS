@@ -1,54 +1,67 @@
-# LiCSBAS
+--------------------------------------------------
+
+@author:     Zhipeng Wu  
+@email:       763008300@qq.com  
+@website:     https://wuzhipeng.cn/  
+@create on:   2/14/2021 10:48 PM 
+
+----------------------------------------------------
+
+# LICSBAS for Windows
+> forked from the original [LICSBAS](https://github.com/yumorishita/LiCSBAS)
 
 LiCSBAS is an open-source package in Python and bash to carry out InSAR time series analysis using LiCSAR products (i.e., unwrapped interferograms and coherence) which are freely available on the [COMET-LiCS web portal](https://comet.nerc.ac.uk/COMET-LiCS-portal/).
 
-
-
 Users can easily derive the time series and velocity of the displacement if sufficient LiCSAR products are available in the area of interest. LiCSBAS also contains visualization tools to interactively display the time series of displacement to help investigation and interpretation of the results.
 
-[<img src="https://raw.githubusercontent.com/wiki/yumorishita/LiCSBAS/images/comet-lics-web.png"  height="220">](https://comet.nerc.ac.uk/COMET-LiCS-portal/) <img src="https://raw.githubusercontent.com/wiki/yumorishita/LiCSBAS/images/sample_vel.png"  height="220">  <img src="https://raw.githubusercontent.com/wiki/yumorishita/LiCSBAS/images/sample_ts.png"  height="220">
+## Tutorial
 
-<img src="https://raw.githubusercontent.com/wiki/yumorishita/LiCSBAS/images/LiCSBAS_plot_ts.py_demo_small.gif" alt="Demonstration Video"/>
+1. Download and install [Python](https://www.python.org/). **Go to the path where `python.exe` is located, copy `python.exe` and rename it to `python3.exe`**.
 
-THIS IS RESEARCH CODE PROVIDED TO YOU "AS IS" WITH NO WARRANTIES OF CORRECTNESS. USE AT YOUR OWN RISK.
+2. Download [LiCSBAS-master.zip](https://github.com/Wu-Patrick/LiCSBAS/archive/refs/heads/master.zip), and unzip it.
 
-## Documentation and Bug Reports
+3. Open cmd and run the command to install python package.
 
-See the [**wiki**](https://github.com/yumorishita/LiCSBAS/wiki) pages and [quick start](https://github.com/yumorishita/LiCSBAS/wiki/2_0_workflow#quick-start).
+   ~~~cmd~~
+   cd LiCSBAS-master
+   pip install -r LiCSBAS_requirements.txt
+   ~~~
 
-If you have found an issue or bug, please report it on the [issues page](https://github.com/yumorishita/LiCSBAS/issues), rather than emailing me.
+   If the gdal installation fails, perform the following steps to install it manually.
 
-## Sample Products and Tutorial
+   a. Download the appropriate GDAL installation file according to your computer system and python version from http://www.lfd.uci.edu/~gohlke/pythonlibs/#gdal , such as GDAL-x.x.x-cpxx-cpxxm-win_amd64.whl
 
-- Frame ID: 124D_04854_171313 (Italy)
-- Time: 2016/09/09-2018/05/08 (~1.7 years, ~60 images, ~170 interferograms)
-- Clipped around Campi Flegrei (14.03/14.22/40.78/40.90)
+   b. Use the command `pip install GDAL-x.x.x-cpxx-cpxxm-win_amd64.whl` to install, note that xx needs to be replaced.
 
-- Tutorial: [LiCSBAS_sample_CF.pdf](https://raw.githubusercontent.com/wiki/yumorishita/LiCSBAS/documents/LiCSBAS_sample_CF.pdf) (1.3MB)
+4. Download and install [MSYS2](https://www.msys2.org/).
 
-- Sample batch script: [batch_LiCSBAS_sample_CF.sh](https://raw.githubusercontent.com/wiki/yumorishita/LiCSBAS/documents/batch_LiCSBAS_sample_CF.sh)
-- Sample results: [LiCSBAS_sample_CF.tar.gz](https://raw.githubusercontent.com/wiki/yumorishita/LiCSBAS/sample/LiCSBAS_sample_CF.tar.gz) (37MB)
+5. Add three environment variables. Add the absolute path of `LiCSBAS-master\bin` to the environment variable `Path`; create a new environment variable `PYTHONPATH` with the value set to the absolute path of `LiCSBAS-master\LiCSBAS_lib`; create a new environment variable `MSYS2_PATH_TYPE` with the value set to `inherit`.
 
-## Citations
+6. Run MSYS2 as administrator to use LiCSBAS.
 
-Morishita, Y.; Lazecky, M.; Wright, T.J.; Weiss, J.R.; Elliott, J.R.; Hooper, A. LiCSBAS: An Open-Source InSAR Time Series Analysis Package Integrated with the LiCSAR Automated Sentinel-1 InSAR Processor. *Remote Sens.* **2020**, *12*, 424, https://doi.org/10.3390/RS12030424.
+---
 
-Morishita, Y.: Nationwide urban ground deformation monitoring in Japan using Sentinel-1 LiCSAR products and LiCSBAS. *Prog. Earth Planet. Sci.* **2021**, *8*, 6,  https://doi.org/10.1186/s40645-020-00402-7.
+## 教程
 
-Lazecký, M.; Spaans, K.; González, P.J.; Maghsoudi, Y.; Morishita, Y.; Albino, F.; Elliott, J.; Greenall, N.; Hatton, E.; Hooper, A.; Juncu, D.; McDougall, A.; Walters, R.J.; Watson, C.S.; Weiss, J.R.; Wright, T.J. LiCSAR: An Automatic InSAR Tool for Measuring and Monitoring Tectonic and Volcanic Activity. *Remote Sens.* **2020**, *12*, 2430, https://doi.org/10.3390/rs12152430.
+1. 下载并安装[Python](https://www.python.org/)。**进入`python.exe`所在路径，复制`python.exe`并重命名为`python3.exe`**。
 
-## Acknowledgements
+2. 下载[LiCSBAS-master.zip](https://github.com/Wu-Patrick/LiCSBAS/archive/refs/heads/master.zip),并解压。
 
-This work has been accomplished during Y. Morishita’s visit at University of Leeds, funded by JSPS Overseas Research Fellowship.
+3. 打开cmd，运行命令以安装python包：
+   
+   ~~~cmd~~
+   cd LiCSBAS-master
+   pip install -r LiCSBAS_requirements.txt
+   ~~~
+   
+   如果gdal安装失败，执行以下步骤手动安装：
+   
+   a. 根据你的计算机系统和python版本，从http://www.lfd.uci.edu/~gohlke/pythonlibs/#gdal下载合适的GDAL安装文件，如GDAL-x.x.x-cpxx-cpxxm-win_amd64.whl
+   
+   b. 使用`pip install GDAL-x.x.x-cpxx-cpxxm-win_amd64.whl`命令进行安装，注意xx需要被替换。
+   
+4. 下载并安装[MSYS2](https://www.msys2.org/).
 
-COMET is the UK Natural Environment Research Council's Centre for the Observation and Modelling of Earthquakes, Volcanoes and Tectonics. LiCSAR is developed as part of the NERC large grant, "Looking inside the continents from Space" (NE/K010867/1). LiCSAR contains modified Copernicus Sentinel data [2014-] analysed by the COMET. LiCSAR uses [JASMIN](http://jasmin.ac.uk), the UK’s collaborative data analysis environment.
+5. 添加三个环境变量。将`LiCSBAS-master\bin`的绝对路径添加到环境变量`Path`中；新建环境变量`PYTHONPATH`，变量值设置为`LiCSBAS-master\LiCSBAS_lib`的绝对路径；新建环境变量`MSYS2_PATH_TYPE`，变量值设置为`inherit`。
 
-The [Scientific Colour Maps](http://www.fabiocrameri.ch/colourmaps.php) ([Crameri, 2018](https://doi.org/10.5194/gmd-11-2541-2018)) is used in LiCSBAS.
-
-*Yu Morishita (PhD)\
-JSPS Overseas Research Fellow (June 2018-March 2020)\
-Visiting Researcher, COMET, School of Earth and Environment, University of Leeds (June 2018-March 2020)\
-Chief Researcher, Geography and Crustal Dynamics Research Center, Geospatial Information Authority of Japan (GSI)*
-
-[<img src="https://raw.githubusercontent.com/wiki/yumorishita/LiCSBAS/images/COMET_logo.png"  height="60">](https://comet.nerc.ac.uk/)   [<img src="https://raw.githubusercontent.com/wiki/yumorishita/LiCSBAS/images/logo-leeds.png"  height="60">](https://environment.leeds.ac.uk/see/)  [<img src="https://raw.githubusercontent.com/wiki/yumorishita/LiCSBAS/images/LiCS_logo.jpg"  height="60">](https://comet.nerc.ac.uk/COMET-LiCS-portal/)   [<img src="https://raw.githubusercontent.com/wiki/yumorishita/LiCSBAS/images/GSI_logo.png"  height="60">](https://www.gsi.go.jp/)
-
+6. 使用管理员身份运行MSYS2，即可使用LiCSBAS。
