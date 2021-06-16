@@ -1,14 +1,14 @@
 --------------------------------------------------
 
-@author:     Zhipeng Wu  
-@email:       763008300@qq.com  
-@website:     https://wuzhipeng.cn/  
-@create on:   2/14/2021 10:48 PM 
+Author:      Zhipeng Wu  
+Email:       763008300@qq.com  
+Website:     https://wuzhipeng.cn/  
+Create on:   2/14/2021 10:48 PM 
 
 ----------------------------------------------------
 
 # LICSBAS for Windows
-> forked from the original [LICSBAS](https://github.com/yumorishita/LiCSBAS)
+> Forked from the original [LICSBAS](https://github.com/yumorishita/LiCSBAS) and revised the code to support running on windows.
 
 LiCSBAS is an open-source package in Python and bash to carry out InSAR time series analysis using LiCSAR products (i.e., unwrapped interferograms and coherence) which are freely available on the [COMET-LiCS web portal](https://comet.nerc.ac.uk/COMET-LiCS-portal/).
 
