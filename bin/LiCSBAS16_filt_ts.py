@@ -582,7 +582,7 @@ def main(argv=None):
     print('Output: {}\n'.format(os.path.relpath(cumffile)), flush=True)
 
     print('To plot the time-series:')
-    print('LiCSBAS_plot_ts.py -i {} &\n'.format(os.path.relpath(cumffile)))
+    print('LiCSBAS_plot_ts.py -i "{}" &\n'.format(os.path.relpath(cumffile)))
 
 
 #%%

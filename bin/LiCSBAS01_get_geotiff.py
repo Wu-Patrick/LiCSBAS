@@ -83,6 +83,10 @@ class Usage(Exception):
     def __init__(self, msg):
         self.msg = msg
 
+def urlJoin(*kwargs):
+    [i.strip('\\').strip('/') for i in kwargs]
+    url = '/'.join(kwargs)
+    return url
 
 #%% Main
 def main(argv=None):
@@ -155,7 +159,7 @@ def main(argv=None):
 
 
     #%% Directory and file setting
-    outdir = os.path.join(wd, 'GEOC')
+    outdir = urlJoin(wd, 'GEOC')
     if not os.path.exists(outdir): os.mkdir(outdir)
     os.chdir(outdir)
 
@@ -165,7 +169,7 @@ def main(argv=None):
     #%% ENU and hgt
     for ENU in ['E', 'N', 'U', 'hgt']:
         enutif = '{}.geo.{}.tif'.format(frameID, ENU)
-        url = os.path.join(LiCSARweb, trackID, frameID, 'metadata', enutif)
+        url = urlJoin(LiCSARweb, trackID, frameID, 'metadata', enutif)
         if os.path.exists(enutif):
             rc = tools_lib.comp_size_time(url, enutif)
             if rc == 0:
@@ -188,15 +192,15 @@ def main(argv=None):
 
     #%% baselines, network.png and metadata.txt
     print('Download baselines', flush=True)
-    url = os.path.join(LiCSARweb, trackID, frameID, 'metadata', 'baselines')
+    url = urlJoin(LiCSARweb, trackID, frameID, 'metadata', 'baselines')
     tools_lib.download_data(url, 'baselines')
 
     print('Download network.png', flush=True)
-    url = os.path.join(LiCSARweb, trackID, frameID, 'metadata', 'network.png')
+    url = urlJoin(LiCSARweb, trackID, frameID, 'metadata', 'network.png')
     tools_lib.download_data(url, 'network.png')
 
     print('Download metadata.txt', flush=True)
-    url = os.path.join(LiCSARweb, trackID, frameID, 'metadata', 'metadata.txt')
+    url = urlJoin(LiCSARweb, trackID, frameID, 'metadata', 'metadata.txt')
     tools_lib.download_data(url, 'metadata.txt')
 
     print('', flush=True)
@@ -209,7 +213,7 @@ def main(argv=None):
     else:
         ### Get available dates
         print('Searching latest epoch for mli...', flush=True)
-        url = os.path.join(LiCSARweb, trackID, frameID, 'epochs')
+        url = urlJoin(LiCSARweb, trackID, frameID, 'epochs')
         response = requests.get(url)
         
         response.encoding = response.apparent_encoding #avoid garble
@@ -225,7 +229,7 @@ def main(argv=None):
         for i, imd in enumerate(reversed(_imdates)):
             if np.mod(i, 10) == 0:
                 print("\r  {0:3}/{1:3}".format(i, len(_imdates)), end='', flush=True)
-            url_epoch = os.path.join(url, imd)
+            url_epoch = urlJoin(url, imd)
             response = requests.get(url_epoch)
             response.encoding = response.apparent_encoding #avoid garble
             html_doc = response.text
@@ -239,7 +243,7 @@ def main(argv=None):
         ### Download
         if imd1:
             print('Donwnloading {}.geo.mli.tif as {}.geo.mli.tif...'.format(imd1, frameID), flush=True)
-            url_mli = os.path.join(url, imd1, imd1+'.geo.mli.tif')
+            url_mli = urlJoin(url, imd1, imd1+'.geo.mli.tif')
             tools_lib.download_data(url_mli, mlitif)
         else:
             print('\nNo mli available on {}'.format(url), file=sys.stderr, flush=True)
@@ -249,12 +253,12 @@ def main(argv=None):
 
     #%% GACOS if specified
     if get_gacos:
-        gacosdir = os.path.join(wd, 'GACOS')
+        gacosdir = urlJoin(wd, 'GACOS')
         if not os.path.exists(gacosdir): os.mkdir(gacosdir)
 
         ### Get available dates
         print('\nDownload GACOS data', flush=True)
-        url = os.path.join(LiCSARweb, trackID, frameID, 'epochs')
+        url = urlJoin(LiCSARweb, trackID, frameID, 'epochs')
         response = requests.get(url)
         response.encoding = response.apparent_encoding #avoid garble
         html_doc = response.text
@@ -270,8 +274,8 @@ def main(argv=None):
         print('  Searching available epochs ({} parallel)...'.format(n_para), flush=True)
 
         args = [(i, len(_imdates),
-                 os.path.join(url, imd, '{}.sltd.geo.tif'.format(imd)),
-                 os.path.join(gacosdir, imd+'.sltd.geo.tif')
+                 urlJoin(url, imd, '{}.sltd.geo.tif'.format(imd)),
+                 urlJoin(gacosdir, imd+'.sltd.geo.tif')
                  ) for i, imd in enumerate(_imdates)]
     
         p = q.Pool(n_para)
@@ -302,8 +306,8 @@ def main(argv=None):
             print('Download GACOS ({} parallel)...'.format(n_para), flush=True)
             ### Download
             args = [(i, imd, n_im_dl,
-                     os.path.join(url, imd, '{}.sltd.geo.tif'.format(imd)),
-                     os.path.join(gacosdir, '{}.sltd.geo.tif'.format(imd))
+                     urlJoin(url, imd, '{}.sltd.geo.tif'.format(imd)),
+                     urlJoin(gacosdir, '{}.sltd.geo.tif'.format(imd))
                      ) for i, imd in enumerate(imdates_dl)]
             
             p = q.Pool(n_para)
@@ -318,7 +322,7 @@ def main(argv=None):
     #%% unw and cc
     ### Get available dates
     print('\nDownload geotiff of unw and cc', flush=True)
-    url_ifgdir = os.path.join(LiCSARweb, trackID, frameID, 'interferograms')
+    url_ifgdir = urlJoin(LiCSARweb, trackID, frameID, 'interferograms')
     response = requests.get(url_ifgdir)
     
     response.encoding = response.apparent_encoding #avoid garble
@@ -344,8 +348,8 @@ def main(argv=None):
 
     ## unw
     args = [(i, n_ifg,
-             os.path.join(url_ifgdir, ifgd, '{}.geo.unw.tif'.format(ifgd)),
-             os.path.join(ifgd, '{}.geo.unw.tif'.format(ifgd))
+             urlJoin(url_ifgdir, ifgd, '{}.geo.unw.tif'.format(ifgd)),
+             urlJoin(ifgd, '{}.geo.unw.tif'.format(ifgd))
              ) for i, ifgd in enumerate(ifgdates)]
 
     p = q.Pool(n_para)
@@ -364,8 +368,8 @@ def main(argv=None):
 
     ## cc
     args = [(i, n_ifg,
-             os.path.join(url_ifgdir, ifgd, '{}.geo.cc.tif'.format(ifgd)),
-             os.path.join(ifgd, '{}.geo.cc.tif'.format(ifgd))
+             urlJoin(url_ifgdir, ifgd, '{}.geo.cc.tif'.format(ifgd)),
+             urlJoin(ifgd, '{}.geo.cc.tif'.format(ifgd))
              ) for i, ifgd in enumerate(ifgdates)]
 
     p = q.Pool(n_para)
@@ -393,8 +397,8 @@ def main(argv=None):
     if n_unw_dl != 0:
         print('\nDownload unw ({} parallel)...'.format(n_para), flush=True)
         args = [(i, ifgd, n_unw_dl,
-                 os.path.join(url_ifgdir, ifgd, '{}.geo.unw.tif'.format(ifgd)),
-                 os.path.join(ifgd, '{}.geo.unw.tif'.format(ifgd))
+                 urlJoin(url_ifgdir, ifgd, '{}.geo.unw.tif'.format(ifgd)),
+                 urlJoin(ifgd, '{}.geo.unw.tif'.format(ifgd))
                  ) for i, ifgd in enumerate(unwdates_dl)]
         
         p = q.Pool(n_para)
@@ -405,8 +409,8 @@ def main(argv=None):
     if n_cc_dl != 0:
         print('\nDownload cc ({} parallel)...'.format(n_para), flush=True)
         args = [(i, ifgd, n_cc_dl,
-                 os.path.join(url_ifgdir, ifgd, '{}.geo.cc.tif'.format(ifgd)),
-                 os.path.join(ifgd, '{}.geo.cc.tif'.format(ifgd))
+                 urlJoin(url_ifgdir, ifgd, '{}.geo.cc.tif'.format(ifgd)),
+                 urlJoin(ifgd, '{}.geo.cc.tif'.format(ifgd))
                  ) for i, ifgd in enumerate(ccdates_dl)]
         
         p = q.Pool(n_para)
