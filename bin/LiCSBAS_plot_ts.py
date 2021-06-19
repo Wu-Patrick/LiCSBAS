@@ -358,7 +358,9 @@ if __name__ == "__main__":
         else:
             refx1, refx2, refy1, refy2 = tools_lib.read_range_geo(refarea_geo, width, length, lat1, dlat, lon1, dlon)
     else:
-        refarea = cumh5['refarea'][()]#.decode('utf-8')
+        refarea = cumh5['refarea'][()]
+        if type(refarea)==bytes:
+            refarea = refarea.decode('utf-8')
         refx1, refx2, refy1, refy2 = [int(s) for s in re.split('[:/]', refarea)]
 
 
