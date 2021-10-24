@@ -18,7 +18,7 @@ Users can easily derive the time series and velocity of the displacement if suff
 
 ## Tutorial
 
-1. Download and install [Python](https://www.python.org/). **Go to the path where `python.exe` is located, copy `python.exe` and rename it to `python3.exe`**.
+1. Download and install [Python](https://www.python.org/).
 
 2. Access [source code](https://github.com/Wu-Patrick/LiCSBAS) -> click `Code` -> click `Download ZIP`, and unzip it wherever you want, you need to provide its absolute path later. 
 
@@ -45,7 +45,7 @@ Users can easily derive the time series and velocity of the displacement if suff
 
 ## 教程
 
-1. 下载并安装[Python](https://www.python.org/)。**进入`python.exe`所在路径，复制`python.exe`并重命名为`python3.exe`**。
+1. 下载并安装[Python](https://www.python.org/)。
 
 2. 访问[源代码](https://github.com/Wu-Patrick/LiCSBAS)->点击`Code`->点击`Download ZIP`，然后解压到任意位置，后面需要提供其绝对路径。
 
