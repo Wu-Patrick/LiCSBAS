@@ -2,7 +2,7 @@
 # -*- coding:utf-8 -*-
 """
 Copyright:    WZP
-Filename:     unwrapByGAMMA.py
+Filename:     LiCSBAS02_unwrapByGAMMA.py
 Description:
 
 @author:      wuzhipeng
@@ -21,7 +21,9 @@ import numpy as np
 import subprocess
 import multiprocessing
 
-parser = argparse.ArgumentParser(description='unwrapByGAMMA for InSARProcesser')
+parser = argparse.ArgumentParser(description='''
+unwrapByGAMMA for InSARProcesser, please run the script before LiCSBAS02_ml_prep_InSARProcessor.py or LiCSBAS02_ml_prep_InSARProcessorGeocoded.py.
+''')
 parser.add_argument('-i', '--inputdir', dest='inputdir',type=str, required=True ,help='interf dir of InSARProcesser')
 parser.add_argument('-n', '--nparallel', dest='nparallel',type=int, default=None ,help='Number of parallel processing (Default: # of usable CPU)')
 parser.add_argument('-pr', '--npat_r', dest='npat_r',type=str, default='-',help='number of patches in range (Default: - for automatic patching)')

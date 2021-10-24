@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """
 v1.1.2 20210209 Yu Morishita, GSI
 

@@ -1,8 +1,10 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """
 v1.3.5 20210105 Yu Morishita, GSI
 
 This script masks specified areas or low coherence areas in the unw data. The masking is effective when the unw data include areas which have many unwrapping errors and are not of interest, and can improve the result of Step 1-2 (loop closure). Existing files are not re-created to save time, i.e., only the newly available data will be processed. This step is optional.
+
+You can use "LiCSBAS04op_getMaskFile.py" to generate a txtfile.
 
 ===============
 Input & output files

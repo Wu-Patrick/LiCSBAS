@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """
 v1.7.4 202011119 Yu Morishita, GSI
 
@@ -11,10 +11,10 @@ This script converts GeoTIFF files of unw and cc to float32 and uint8 format, re
 Input & output files
 ====================
 Inputs:
- - GEOC/    
+ - intf_list/
    - yyyymmdd_yyyymmdd/
-     - yyyymmdd_yyyymmdd.geo.unw.tif
-     - yyyymmdd_yyyymmdd.geo.cc.tif
+     - unwrap_pha.tif
+     - coh_multi.tif
   [- *.geo.mli.tif]
   [- *.geo.hgt.tif]
   [- *.geo.[E|N|U].tif]
@@ -36,7 +36,14 @@ Outputs in GEOCml*/ (downsampled if indicated):
 =====
 Usage
 =====
-LiCSBAS02_ml_prep.py -i GEOCdir [-o GEOCmldir] [-n nlook] [--freq float] [--n_para int]
+
+Please run the following command before running the script to get the unwrapping result of the Sentinel-1 Processor (https://sarimggeodesy.github.io/software/):
+
+LiCSBAS02_unwrapByGAMMA.py -i "your_intf_list_folder"
+
+****************
+
+LiCSBAS02_ml_prep_InSARProcessor.py -i GEOCdir [-o GEOCmldir] [-n nlook] [--freq float] [--n_para int]
 
  -i  Path to the input GEOC dir containing stack of geotiff data
  -o  Path to the output GEOCml dir (Default: GEOCml[nlook])

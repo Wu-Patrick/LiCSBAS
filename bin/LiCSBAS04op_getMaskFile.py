@@ -2,7 +2,7 @@
 # -*- coding:utf-8 -*-
 """
 Copyright:    WZP
-Filename:     getMaskFile.py
+Filename:     LiCSBAS04op_getMaskFile.py
 Description:
 
 @author:      wuzhipeng
@@ -21,7 +21,7 @@ import glob
 import os
 import numpy as np
 
-parser = argparse.ArgumentParser(description='Get a text file of a list of ranges to be masked (format is x1:x2/y1:y2)')
+parser = argparse.ArgumentParser(description='generate a txtfile for LiCSBAS04op_mask_unw.py (format is x1:x2/y1:y2)')
 parser.add_argument('-i', '--inputdir', dest='inputdir',type=str, default='GEOCml1' ,help='inputdir (default: GEOCml1)')
 parser.add_argument('-o', '--outputfile', dest='outputfile',type=str, default='masklist.txt' ,help='output file (default: masklist.txt)')
 args = parser.parse_args()
